@@ -25,34 +25,18 @@ Y_test = test_ds[target]
 
 #### GAUSSIAN NAIVE BAYES ALGORITHM
 class GaussianNB:
-  def __init__(self, alpha=1e-5):
-    self.smoothing = alpha
-
   def fit(self, X, Y):
     self.classes = np.unique(Y) # 0, 1, 2
-    self.stats = {}
-
-    for c in self.classes:
-      X_c = X[Y == c]
-      self.stats[c] = {
-          'prior': len(X_c) / len(X),
-          'mean': X_c.mean(axis=0),
-          'var': X_c.var(axis=0, ddof=0) + self.smoothing # epsilon to prevent divide by zero
-      }
-
-  def _pdf(self, x, mean, var):
-    return np.exp(-(x - mean)**2 / (2 * var)) / np.sqrt(2 * np.pi * var) # NOTE: var = sigma^2
+    self.stats = { c: { 'prior': np.mean(Y == c), 'mean': X[Y == c].mean(axis=0), 'var': X[Y == c].var(axis=0) } for c in self.classes }
 
   def predict(self, X):
-    posteriors = []
-    for x in X:
-      probs = []
-      for c in self.classes:
-        prior = np.log(self.stats[c]['prior'])
-        likelihood = np.sum(np.log(self._pdf(x, self.stats[c]['mean'], self.stats[c]['var'])))
-        probs.append(prior + likelihood)
-      posteriors.append(self.classes[np.argmax(probs)])
-    return np.array(posteriors)
+    log_probs = np.empty((X.shape[0], len(self.classes)))
+    for idx, c in enumerate(self.classes):
+      stats = self.stats[c]
+      log_prior = np.log(stats['prior'])
+      log_likelihood = -0.5 * (np.log(2 * np.pi * stats['var']) + ((X - stats['mean'])**2 / stats['var'])).sum(axis=1)
+      log_probs[:, idx] = log_prior + log_likelihood
+    return self.classes[np.argmax(log_probs, axis=1)]
 
 #### TRAINING AND PREDICTION
 model = GaussianNB()
