@@ -31,6 +31,30 @@ class TestValueOps(unittest.TestCase):
     self.assertEqual(self.a.relu().data, 2.0, "ReLU positive failed")
     self.assertEqual(self.c.relu().data, 0.0, "ReLU negative failed")
 
+  def test_exp(self):
+    x = Value(2.0)
+    y = x.exp()
+    y.backward()
+
+    xpt = torch.tensor(x.data, requires_grad=True, dtype=torch.double)
+    ypt = torch.exp(xpt)
+    ypt.backward()
+
+    self.assertAlmostEqual(y.data, ypt.item(), places=6, msg="exp forward pass failed")
+    self.assertAlmostEqual(x.grad, xpt.grad.item(), places=6, msg="exp backward pass failed")
+
+  def test_tanh(self):
+    x = Value(2.0)
+    y = x.tanh()
+    y.backward()
+
+    xpt = torch.tensor(x.data, requires_grad=True, dtype=torch.double)
+    ypt = torch.tanh(xpt)
+    ypt.backward()
+
+    self.assertAlmostEqual(y.data, ypt.item(), places=6, msg="tanh forward pass failed")
+    self.assertAlmostEqual(x.grad, xpt.grad.item(), places=6, msg="tanh backward pass failed")
+
   def test_sanity_check(self): # from micrograd tests
     x = Value(-4.0)
     z = 2 * x + 2 + x
