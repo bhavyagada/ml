@@ -1,7 +1,15 @@
 import random
 from engine import Value
 
-class Neuron:
+class Module:
+  def parameters(self):
+    return []
+
+  def zero_grad(self):
+    for p in self.parameters():
+      p.grad = 0.0
+
+class Neuron(Module):
   def __init__(self, nin, nonlin=True):
     self.w = [Value(random.uniform(-1,1)) for _ in range(nin)]
     self.b = Value(random.uniform(-1,1))
@@ -17,9 +25,9 @@ class Neuron:
   def __repr__(self):
     return f"{'Tanh' if self.nonlin else 'Linear'}({len(self.w)})"
 
-class Layer:
-  def __init__(self, nin, nout, **kwargs):
-    self.neurons = [Neuron(nin, **kwargs) for _ in range(nout)]
+class Layer(Module):
+  def __init__(self, nin, nout, nonlin=True):
+    self.neurons = [Neuron(nin, nonlin) for _ in range(nout)]
 
   def __call__(self, x):
     outs = [n(x) for n in self.neurons]
@@ -31,7 +39,7 @@ class Layer:
   def __repr__(self):
     return f"{len(self.neurons)}x{self.neurons[0]}"
 
-class MLP:
+class MLP(Module):
   def __init__(self, nin, nouts):
     sz = [nin] + nouts
     self.layers = [Layer(sz[i], sz[i+1], nonlin=i!=len(nouts)-1) for i in range(len(nouts))]
@@ -45,4 +53,4 @@ class MLP:
     return [p for layer in self.layers for p in layer.parameters()]
 
   def __repr__(self):
-    return f"MLP of [{', '.join(str(layer) for layer in self.layers)}]"
+    return f"MLP[{', '.join(str(layer) for layer in self.layers)}]"
